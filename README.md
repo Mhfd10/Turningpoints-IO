@@ -1,9 +1,8 @@
 # Turningpoints-IO
 Calculation of Io's turning points using Nasa's Horizons System
 
-To determine the speed of light, one can observe the points of inflection at different times and compare them with the calculation, which results in differences and one can determine the speed of light, e.g. Rømer's method. In order to know when to observe the turning points, I have written this short python script.
-1. Take from NASA's Horizons system the data for "Observer-Primary-Target angle" and adjust the rest of the settings as you need them.
-2. Delete the text before and after the data as in the example "example.txt"
-3. Rename the file to "horizons_jupiter_io.txt".
-4. Move the file into the project folder in which you also have "main.py"
-5. Run the script and it will print out all observable times for the turning points
+To determine the speed of light, one can observe the inflection points at different times and compare them with the calculation, which results in differences and one can determine the speed of light, e.g. Rømer's method. To know when to observe the inflection points, I wrote this short Python script.
+1. Make sure you have numpy installed
+2. Take the data for "Observer-Primary-Target angle" from NASA's Horizons system and adjust the rest of the settings to your needs.
+3. Put the file in your project folder.
+4. Run the script and it will save all the observed times for the turnpoints as well as the linear interpolation in a separate file.
