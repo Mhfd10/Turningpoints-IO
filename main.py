@@ -1,38 +1,42 @@
-turningpoints = []
-angel = []
-time = []
-night = []
-timecorrect = []
-angelcorrect = []
-nightcorrect = []
-results = []
-datalength = 41761
+import numpy as np
 
-with open('horizons_jupiter_io.txt') as f:  # import angels from file to table
-    for i in range(1, datalength):
-        read = f.readline(i)
-        angel.append(read[23:-1])
-f.close()
-for i in range(31, len(angel)):  # correct data in table, because it does not import as it should from the file
-    angelcorrect.append(angel[i])
-with open('horizons_jupiter_io.txt') as f:  # import time from file to table
-    for i in range(1, datalength):
-        read = f.readline(i)
-        time.append(read[1:-14])
-f.close()
-for i in range(31, len(time)):  # correct data in table, because it does not import as it should from the file
-    timecorrect.append(time[i])
-with open('horizons_jupiter_io.txt') as f:  # import state of the day from file to table
-    for i in range(1, datalength):
-        read = f.readline(i)
-        night.append(read[19:-12])
-f.close()
-for i in range(31, len(night)):  # correct data in table, because it does not import as it should from the file
-    nightcorrect.append(night[i])
-for i in range(0, len(angelcorrect) - 1):  # take all the angels around 90° (with are the turningpoints)
-    if nightcorrect[i] == ' ':  # look up if it is night, so an observation could be successful with good weather
-        if 89.9 < float(angelcorrect[i]) < 90.1:  # and save the location where it is in the table, created above
-            turningpoints.append(i)
-for i in range(0, len(turningpoints) - 1):  # take the location and look it up in the table for the time, created above
-    results.append(timecorrect[turningpoints[i]])
-print(results)  # print time of the turningpoints
+input_file = "horizons_results.txt"
+output_file = "interpolated_angles.txt"
+
+timestamps = []
+angles = []
+
+with open(input_file, "r") as file:
+    for line in file:
+        parts = line.strip().split()
+        if len(parts) >= 3:  # Ensure the line has enough parts
+            try:
+                timestamp = f"{parts[0]} {parts[1]}"  # Date and Time
+                angle = float(parts[-1])  # Extract the last column (angle)
+                timestamps.append(timestamp)
+                angles.append(angle)
+            except ValueError:
+                continue  # Skip lines that do not contain valid numbers
+
+timestamps = np.array(timestamps)
+angles = np.array(angles)
+
+# Find all intervals where the angle crosses 90° and interpolate
+interpolated_results = ["Interpolated timestamps where angle is exactly 90°:\n"]
+
+for i in range(len(angles) - 1):
+    if (angles[i] < 90 and angles[i + 1] > 90) or (angles[i] > 90 and angles[i + 1] < 90):
+        # Linear interpolation formula
+        t1, t2 = timestamps[i], timestamps[i + 1]
+        a1, a2 = angles[i], angles[i + 1]
+
+        # Compute the fraction of the way between the two timestamps
+        fraction = (90 - a1) / (a2 - a1)
+        interpolated_time = f"Between {t1} and {t2}, interpolated at fraction {fraction:.4f}"
+
+        interpolated_results.append(f"{interpolated_time}\n")
+
+with open(output_file, "w") as file:
+    file.writelines(interpolated_results)
+
+print(f"Interpolated results saved to {output_file}")
