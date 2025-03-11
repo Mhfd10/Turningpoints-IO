@@ -1,42 +1,49 @@
 import numpy as np
+import datetime
 
 input_file = "horizons_results.txt"
-output_file = "interpolated_angles.txt"
+output_file = "filtered_interpolated_angles.txt"
 
-timestamps = []
-angles = []
+timestamps, angles = [], []
 
+# Read and process the file
 with open(input_file, "r") as file:
     for line in file:
+        if "$$SOE" in line:
+            break  # Start processing after this
+    for line in file:
+        if "$$EOE" in line:
+            break  # Stop processing at end of data
+
         parts = line.strip().split()
-        if len(parts) >= 3:  # Ensure the line has enough parts
-            try:
-                timestamp = f"{parts[0]} {parts[1]}"  # Date and Time
-                angle = float(parts[-1])  # Extract the last column (angle)
-                timestamps.append(timestamp)
-                angles.append(angle)
-            except ValueError:
-                continue  # Skip lines that do not contain valid numbers
+        if len(parts) < 3:
+            continue  # Skip invalid lines
 
-timestamps = np.array(timestamps)
-angles = np.array(angles)
+        try:
+            timestamp = datetime.datetime.strptime(f"{parts[0]} {parts[1]}", "%Y-%b-%d %H:%M")
+            angle = float(parts[-1])
+            timestamps.append(timestamp)
+            angles.append(angle)
+        except ValueError:
+            continue  # Skip lines with invalid data
 
-# Find all intervals where the angle crosses 90° and interpolate
-interpolated_results = ["Interpolated timestamps where angle is exactly 90°:\n"]
+timestamps, angles = np.array(timestamps), np.array(angles)
 
+if len(angles) == 0:
+    print("No valid data was read. Check the input file format.")
+    exit()
+
+print(f"Read {len(angles)} valid data points.")
+
+# Find interpolated timestamps where the angle crosses 90°
+interpolated_results = ["Filtered interpolated timestamps where angle is exactly 90°:\n"]
 for i in range(len(angles) - 1):
-    if (angles[i] < 90 and angles[i + 1] > 90) or (angles[i] > 90 and angles[i + 1] < 90):
-        # Linear interpolation formula
-        t1, t2 = timestamps[i], timestamps[i + 1]
-        a1, a2 = angles[i], angles[i + 1]
-
-        # Compute the fraction of the way between the two timestamps
-        fraction = (90 - a1) / (a2 - a1)
-        interpolated_time = f"Between {t1} and {t2}, interpolated at fraction {fraction:.4f}"
-
+    if (angles[i] < 90 < angles[i + 1]) or (angles[i] > 90 > angles[i + 1]):
+        fraction = (90 - angles[i]) / (angles[i + 1] - angles[i])
+        interpolated_time = timestamps[i] + (timestamps[i + 1] - timestamps[i]) * fraction
         interpolated_results.append(f"{interpolated_time}\n")
 
 with open(output_file, "w") as file:
     file.writelines(interpolated_results)
 
-print(f"Interpolated results saved to {output_file}")
+print(f"Results saved to {output_file}")
